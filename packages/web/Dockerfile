@@ -6,7 +6,7 @@ WORKDIR /app
 # 复制pnpm的相关文件到工作目录
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 
-COPY packages/icon-web/package.json packages/icon-web/package.json
+COPY packages/web/package.json packages/web/package.json
 
 # 安装pnpm
 RUN npm install -g pnpm --registry=https://registry.npmmirror.com
@@ -14,12 +14,12 @@ RUN npm install -g pnpm --registry=https://registry.npmmirror.com
 # 安装项目依赖
 RUN pnpm install --registry=https://registry.npmmirror.com
 
-COPY packages/icon-web packages/icon-web
+COPY packages/web packages/web
 
-RUN cd packages/icon-web && pnpm build
+RUN cd packages/web && pnpm build
 
 # 暴露端口，这应该是你的应用程序监听的端口
 EXPOSE 5001
 
 # 启动应用程序
-CMD ["sh", "-c", "cd ./packages/icon-web && yarn start"]
+CMD ["sh", "-c", "cd ./packages/web && yarn start"]

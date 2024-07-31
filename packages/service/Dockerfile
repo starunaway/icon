@@ -7,7 +7,7 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 
 
-COPY packages/icon-service/package.json packages/icon-service/package.json
+COPY packages/service/package.json packages/service/package.json
 
 # 安装pnpm
 RUN npm install -g pnpm --registry=https://registry.npmmirror.com
@@ -15,12 +15,12 @@ RUN npm install -g pnpm --registry=https://registry.npmmirror.com
 # 安装项目依赖
 RUN pnpm install --registry=https://registry.npmmirror.com
 
-COPY packages/icon-service packages/icon-service
+COPY packages/service packages/service
 
-RUN cd packages/icon-service && pnpm build
+RUN cd packages/service && pnpm build
 
 # 暴露端口，这应该是你的应用程序监听的端口
 EXPOSE 4001
 
 # 启动应用程序
-CMD ["sh", "-c", "cd ./packages/icon-service && yarn start:prod"]
+CMD ["sh", "-c", "cd ./packages/service && yarn start:prod"]
