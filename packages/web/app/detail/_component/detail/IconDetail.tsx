@@ -37,6 +37,8 @@ import { createIcon, deleteIcon, updateIcon } from '@/api';
 import { redirect } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppSelector } from '@/lib/store';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 export default function IconDetail(props: { icon?: IconItemInfo }) {
   const { icon } = props;
@@ -265,7 +267,7 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
         {icon && (
           <p className="absolute bottom-8">
             <p className="text-xs text-muted-foreground">
-              更新时间:{dayjs(icon?.updateTime).format('YYYY-MM-DD HH:mm:ss')}
+              更新时间:{dayjs.utc(icon?.updateTime).format('YYYY-MM-DD HH:mm:ss')}
             </p>
             {icon.updater && (
               <p className="text-xs text-muted-foreground">最近更新:{icon.updater}</p>
