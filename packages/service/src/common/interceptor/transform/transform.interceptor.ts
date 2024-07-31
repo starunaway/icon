@@ -1,7 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { IApiResponse } from '@/common';
+import { IApiResponse } from 'src/types';
 
 // todo: 某些情况下，需要支持返回原始数据，而不是包装过一层
 @Injectable()
