@@ -6,6 +6,7 @@ import { getIcons } from '@/api';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as HotToaster } from 'react-hot-toast';
 import { getUserInfoByToken } from '@/api/user';
+import StoreProvider from './_component/StoreProvider';
 
 export const metadata: Metadata = {
   title: 'Xbot Icon',
@@ -31,7 +32,9 @@ export default async function RootLayout({
     <html lang="en">
       <body className={clsx('flex flex-col ')}>
         <Header title="Icon" user={user}></Header>
-        <main className="flex-1  w-full h-full overflow-hidden">{children}</main>
+        <main className="flex-1  w-full h-full overflow-hidden">
+          <StoreProvider user={user}>{children}</StoreProvider>
+        </main>
         <Toaster />
         <HotToaster />
         <svg

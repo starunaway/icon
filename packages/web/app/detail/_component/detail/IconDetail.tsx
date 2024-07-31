@@ -1,6 +1,5 @@
 'use client';
 import { IconItemInfo } from '@/types';
-import { useRouter } from 'next/navigation';
 import {
   Form,
   FormControl,
@@ -12,7 +11,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { FilePenLine, Trash2, Upload, XCircle, Eye, EyeOff } from 'lucide-react';
+import { Trash2, Upload, Eye, EyeOff, SaveOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,13 +36,14 @@ import { useToast } from '@/components/ui/use-toast';
 import { createIcon, deleteIcon, updateIcon } from '@/api';
 import { redirect } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAppSelector } from '@/lib/store';
 
 export default function IconDetail(props: { icon?: IconItemInfo }) {
   const { icon } = props;
   const { toast } = useToast();
-  // 不用 router 是因为会命中缓存，显示有问题
-  const router = useRouter();
-  const [editing, setEditing] = useState(!icon);
+
+  const user = useAppSelector((state) => state.user);
+
   const [showOrigin, setShowOrigin] = useState(false);
 
   const [file, setFile] = useState<File | null>(null);
@@ -98,7 +98,12 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
-
+    const formData = new FormData();
+    formData.append('name', values.name);
+    formData.append('label', values.label);
+    formData.append('desc', values.desc);
+    formData.append('tag[]', values.tag || '');
+    formData.append('updater', user?.name || '');
     if (!icon) {
       // 创建流程
       if (!file) {
@@ -109,12 +114,7 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
         return;
       }
 
-      const formData = new FormData();
       formData.append('file', file);
-      formData.append('name', values.name);
-      formData.append('label', values.label);
-      formData.append('desc', values.desc);
-      formData.append('tag[]', values.tag || '');
 
       try {
         await createIcon(formData);
@@ -127,12 +127,7 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
         });
       }
     } else {
-      const formData = new FormData();
-      formData.append('name', values.name);
-      formData.append('label', values.label);
-      formData.append('desc', values.desc);
       formData.append('id', icon.id);
-      formData.append('tag[]', values.tag || '');
 
       if (file) {
         formData.append('file', file);
@@ -180,17 +175,24 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
 
         {
           <p className="hover:text-[#7a7a7a] h-12 ">
-            {(!icon || editing) && (
-              <span className="flex gap-2 cursor-pointer" onClick={handleImport}>
-                上传图标 <Upload />
-              </span>
-            )}
+            <span className="flex gap-2 cursor-pointer" onClick={handleImport}>
+              上传图标 <Upload />
+            </span>
           </p>
         }
 
+        {(icon || previewSvg) &&
+          (previewSvg ? (
+            <div className="absolute top-10 left-10 text-green-500">新</div>
+          ) : showOrigin ? (
+            <div className="absolute top-10 left-10 text-orange-500">原始图标</div>
+          ) : (
+            <div className="absolute top-10 left-10 text-green-500">处理后图标</div>
+          ))}
+
         {icon && (
-          <div className="absolute top-10 right-10 hidden group-hover:flex gap-2 ">
-            {!editing &&
+          <div className="absolute top-10 right-10 flex gap-2 ">
+            {!previewSvg &&
               (showOrigin ? (
                 <TooltipProvider>
                   <Tooltip>
@@ -227,6 +229,17 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
                 </TooltipProvider>
               ))}
 
+            {previewSvg && (
+              <SaveOff
+                onClick={() => {
+                  setPreviewSvg(null);
+                  setShowOrigin(false);
+                }}
+                size={18}
+                className="hover:text-[#7a7a7a]  cursor-pointer"
+              />
+            )}
+
             <Dialog>
               <DialogTrigger asChild>
                 <Trash2 size={18} className="hover:text-[#7a7a7a]  cursor-pointer" />
@@ -246,34 +259,17 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-
-            {editing ? (
-              <XCircle
-                size={18}
-                className="hover:text-[#7a7a7a]  cursor-pointer"
-                onClick={() => {
-                  console.log('1111');
-                  setEditing((v) => !v);
-                  setFile(null);
-                  setPreviewSvg(null);
-                  setShowOrigin(false);
-                }}
-              />
-            ) : (
-              <FilePenLine
-                size={18}
-                className="hover:text-[#7a7a7a]  cursor-pointer"
-                onClick={() => setEditing((v) => !v)}
-              />
-            )}
           </div>
         )}
 
         {icon && (
           <p className="absolute bottom-8">
-            <span className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               更新时间:{dayjs(icon?.updateTime).format('YYYY-MM-DD HH:mm:ss')}
-            </span>
+            </p>
+            {icon.updater && (
+              <p className="text-xs text-muted-foreground">最近更新:{icon.updater}</p>
+            )}
           </p>
         )}
       </div>
@@ -292,7 +288,7 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
                     <div className="flex">
                       <FormLabel className="min-w-[120px] flex items-center">IconName</FormLabel>
                       <FormControl>
-                        <Input placeholder="iconname" {...field} disabled={!editing} />
+                        <Input placeholder="iconname" {...field} />
                       </FormControl>
                     </div>
                     <FormMessage className="!mb-2 ms-[120px]" />
@@ -313,7 +309,6 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
                       // 不允许修改颜色类型
                       // disabled={!!icon}
                       // 允许修改颜色类型
-                      disabled={!editing}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -337,11 +332,7 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
                 <FormItem>
                   <div className="flex">
                     <FormLabel className="min-w-[120px] flex items-center">Tags</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      disabled={!editing}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -370,18 +361,16 @@ export default function IconDetail(props: { icon?: IconItemInfo }) {
                   <div className="flex items-start">
                     <FormLabel className="min-w-[120px] flex items-center pt-3">描述</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Description" {...field} disabled={!editing} />
+                      <Textarea placeholder="Description" {...field} />
                     </FormControl>
                   </div>
                   <FormMessage className="!mb-2 ms-[120px]" />
                 </FormItem>
               )}
             />
-            {editing && (
-              <Button type="submit" className="absolute bottom-0 right-0">
-                {icon ? 'Update' : 'Create'}
-              </Button>
-            )}
+            <Button type="submit" className="absolute bottom-0 right-0">
+              {icon ? 'Update' : 'Create'}
+            </Button>
           </form>
         </Form>
       </div>
